@@ -45,56 +45,67 @@ translations = {
     },
 }
 
-# --- نظام تسجيل الدخول وعزل العملاء (SaaS Multi-Tenant Authentication) ---
+# --- نظام تسجيل الدخول الديناميكي (أكواد شهرية + إدخال اسم الشركة للعميل) ---
 if "logged_in" not in st.session_state:
   st.session_state.logged_in = False
   st.session_state.company_name = ""
 
 if not st.session_state.logged_in:
-  st.title("🔐 تسجيل دخول الشركات - نظام أسطولي")
-  st.markdown("الرجاء إدخال بيانات الاشتراك الخاصة بشركتك للوصول إلى لوحة التحكم المعزولة.")
+  st.title("🔐 تسجيل الدخول - نظام أسطولي")
+  st.markdown("الرجاء إدخال اسم شركتك وكود الاشتراك الشهري الخاص بك.")
 
   with st.form("login_form"):
-    company_input = st.text_input("اسم الشركة أو كود العميل")
-    password_input = st.text_input("كلمة المرور (Password)", type="password")
+    company_input = st.text_input("اسم شركتك (الذي سيظهر في لوحة التحكم)")
+    code_input = st.text_input("كود الاشتراك الشهري", type="password")
     submit_button = st.form_submit_button("دخول المنصة")
 
     if submit_button:
-      # قاعدة بيانات تجريبية للشركات المشتركة (يمكن توسيعها لاحقاً أو ربطها بقاعدة بيانات)
-      valid_companies = {
-          "محمد": "mohamed123",
-          "أحمد": "ahmed456",
-          "شركة الفرسان": "forsan2026",
-      }
+      # كلمة مرور الإدارة بالإنجليزية للأمان التام
+      ADMIN_PASSWORD = "Ahmed Khaled 1998"
 
-      if company_input in valid_companies and valid_companies[company_input] == password_input:
+      # أكواد الاشتراكات الشهرية الصالحة التي تقومي ببيعها للعملاء
+      valid_subscription_codes = [
+          "NINJA-2026-VIP",
+          "TOYOU-2026-PRO",
+          "FLEET-9988-2026",
+      ]
+
+      if code_input == ADMIN_PASSWORD:
         st.session_state.logged_in = True
-        st.session_state.company_name = company_input
-        st.success(f"مرحباً بك يا {company_input}! يتم تحميل لوحة التحكم الخاصة بشركتك...")
+        st.session_state.company_name = (
+            company_input if company_input else "لوحة الإدارة الرئيسية (الأدمن)"
+        )
+        st.success("مرحباً بكِ يا بشمهندسة بسملة! يتم فتح المنصة...")
         st.rerun()
+      elif code_input in valid_subscription_codes:
+        if company_input.strip() == "":
+          st.error("الرجاء كتابة اسم شركتك بشكل صحيح.")
+        else:
+          st.session_state.logged_in = True
+          st.session_state.company_name = company_input
+          st.success(f"مرحباً بكِ في لوحة تحكم شركة {company_input}!")
+          st.rerun()
       else:
-        st.error("خطأ في اسم الشركة أو كلمة المرور. تأكد من البيانات.")
+        st.error("كود الاشتراك الشهري غير صحيح أو منتهي الصلاحية.")
 
-  st.stop()  # إيقاف عرض باقي الصفحة لو لم يتم تسجيل الدخول
+  st.stop()
 
-# لو المستخدم مسجل دخول، نقدر نكمل عرض الداشبورد الخاصة به فقط
+# لو تم تسجيل الدخول بنجاح
 st.sidebar.title("⚙️ الإعدادات والتحكم")
 
-# زر تسجيل الخروج
 if st.sidebar.button("🚪 تسجيل الخروج"):
   st.session_state.logged_in = False
   st.session_state.company_name = ""
   st.rerun()
 
-st.sidebar.success(f"👤 الشركة الحالية: {st.session_state.company_name}")
+st.sidebar.success(f"👤 الشركة: {st.session_state.company_name}")
 
 selected_lang = st.sidebar.selectbox("Language / اللغة", ["العربية", "English"])
 t = translations[selected_lang]
 
-# عنوان النظام الرئيسي مخصص باسم الشركة الحالية
 st.title(f"{t['title']} - [{st.session_state.company_name}]")
 
-# قسم رفع الملفات الخاصة بالشركات
+# قسم رفع الملفات
 st.sidebar.markdown("---")
 st.sidebar.subheader(t["upload_section"])
 uploaded_files = st.sidebar.file_uploader(
@@ -104,7 +115,6 @@ uploaded_files = st.sidebar.file_uploader(
     help=t["upload_help"],
 )
 
-# معالجة ودمج الملفات المرفوعة للشركة الحالية
 if uploaded_files:
   dfs = []
   for file in uploaded_files:
@@ -125,24 +135,22 @@ if uploaded_files:
   else:
     df = None
 else:
-  # داتا افتراضية توضيحية خاصة بالشركات
   data = {
-      "اسم السائق": [f"سائق تبع {st.session_state.company_name} 1", f"سائق تبع {st.session_state.company_name} 2"],
-      "رقم الإقامة": ["2458963214", "2398741236"],
-      "رقم المركبة": ["أ ب ج 1234", "س ص ع 5678"],
-      "حالة الإقامة": ["سارية", "منتهية"],
-      "تاريخ انتهاء الإقامة": ["2026-12-15", "2026-04-10"],
-      "رخصة سارية؟": ["نعم", "لا (منتهية)"],
-      "الطلبات المقبولة": [45, 30],
-      "الطلبات المرفوضة": [3, 7],
-      "محفظة الكاش (ج.م)": [1250.0, 840.5],
-      "منصة التوصيل": ["نينجا (Ninja)", "توي (ToYou)"],
+      "اسم السائق": ["قم برفع ملفات الأسطول الخاصة بك"],
+      "رقم الإقامة": ["---"],
+      "رقم المركبة": ["---"],
+      "حالة الإقامة": ["---"],
+      "تاريخ انتهاء الإقامة": ["2026-12-31"],
+      "رخصة سارية؟": ["---"],
+      "الطلبات المقبولة": [0],
+      "الطلبات المرفوضة": [0],
+      "محفظة الكاش (ج.م)": [0.0],
+      "منصة التوصيل": ["---"],
   }
   df = pd.DataFrame(data)
-  st.sidebar.info(f"💡 يتم عرض بيانات تجريبية خاصة بشركة {st.session_state.company_name}. ارفع ملفاتك لعرض داتائك الحقيقية.")
+  st.sidebar.info("💡 برجاء رفع ملفات الإكسل الخاصة بالأسطول لعرض البيانات وتحليلها.")
 
 if df is not None:
-  # حساب الأيام المتبقية لانتهاء الإقامة توماتيكياً
   if "تاريخ انتهاء الإقامة" in df.columns:
     df["تاريخ انتهاء الإقامة ديت"] = pd.to_datetime(
         df["تاريخ انتهاء الإقامة"], errors="coerce"
@@ -163,12 +171,17 @@ if df is not None:
     df[t["days_remaining"]] = df["تاريخ انتهاء الإقامة ديت"].apply(calc_days)
     df = df.drop(columns=["تاريخ انتهاء الإقامة ديت"])
 
-  # المؤشرات الحية (Metrics)
   col1, col2, col3, col4 = st.columns(4)
   total_drivers = len(df)
-  active_orders_sum = df["الطلبات المقبولة"].sum() if "الطلبات المقبولة" in df.columns else 0
-  rejected_orders_sum = df["الطلبات المرفوضة"].sum() if "الطلبات المرفوضة" in df.columns else 0
-  total_cash_sum = df["محفظة الكاش (ج.م)"].sum() if "محفظة الكاش (ج.م)" in df.columns else 0.0
+  active_orders_sum = (
+      df["الطلبات المقبولة"].sum() if "الطلبات المقبولة" in df.columns else 0
+  )
+  rejected_orders_sum = (
+      df["الطلبات المرفوضة"].sum() if "الطلبات المرفوضة" in df.columns else 0
+  )
+  total_cash_sum = (
+      df["محفظة الكاش (ج.م)"].sum() if "محفظة الكاش (ج.م)" in df.columns else 0.0
+  )
 
   col1.metric(t["total_drivers"], f"{total_drivers}")
   col2.metric(t["active_orders"], f"{active_orders_sum}")
@@ -177,10 +190,10 @@ if df is not None:
 
   st.markdown("---")
 
-  # جدول عرض حالة الأسطول الخاص بالشركة فقط
   st.subheader(t["fleet_status"])
   st.dataframe(df, use_container_width=True)
 
-# تذييل الصفحة (Footer)
 st.markdown("---")
-st.markdown(f"<p style='text-align: center;'>{t['footer']}</p>", unsafe_allow_html=True)
+st.markdown(
+    f"<p style='text-align: center;'>{t['footer']}</p>", unsafe_allow_html=True
+)
