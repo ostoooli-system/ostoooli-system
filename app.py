@@ -26,6 +26,11 @@ translations = {
         "upload_section": "رفع بيانات الأسطول (يدعم عدة ملفات)",
         "upload_label": "ارفع ملفات (XLSX أو CSV) للشركة الخاصة بك",
         "upload_help": "يمكنك رفع ملفات أسطولك الخاص لتظهر لك بياناتك وحدك.",
+        "search_label": "🔍 بحث عن سائق (بالاسم أو رقم الإقامة)",
+        "filter_label": "🏷️ فلترة حسب حالة الإقامة",
+        "all_residences": "الكل",
+        "valid_residences": "الإقامات السارية فقط",
+        "expired_residences": "الإقامات المنتهية / المعطلة",
         "footer": "نظام أسطولي لإدارة النقل والتوصيل © 2026 - إعداد بشمهندسة بسملة عبد الستار",
         "days_remaining": "الأيام المتبقية للإقامة",
     },
@@ -40,44 +45,43 @@ translations = {
         "upload_section": "Upload Fleet Data (Multi-files)",
         "upload_label": "Upload files (XLSX or CSV) for your company",
         "upload_help": "Upload your company fleet files to view your data exclusively.",
+        "search_label": "🔍 Search driver (Name or Residence ID)",
+        "filter_label": "🏷️ Filter by Residence Status",
+        "all_residences": "All",
+        "valid_residences": "Valid Residences Only",
+        "expired_residences": "Expired / Critical Residences",
         "footer": "Ostooooli Fleet Management System © 2026 - Prepared by Eng. Basmala Abdelstar",
         "days_remaining": "Days Remaining for Residency",
     },
 }
 
-# --- نظام تسجيل الدخول الديناميكي (أكواد شهرية + إدخال اسم الشركة للعميل) ---
+# --- نظام تسجيل الدخول ---
 if "logged_in" not in st.session_state:
   st.session_state.logged_in = False
   st.session_state.company_name = ""
 
 if not st.session_state.logged_in:
   st.title("🔐 تسجيل الدخول - نظام أسطولي")
-  st.markdown("الرجاء إدخال اسم شركتك وكود الاشتراك الشهري الخاص بك.")
+  st.markdown("الرجاء إدخال اسم شركتك وكود الاشتراك أو كلمة المرور.")
 
   with st.form("login_form"):
     company_input = st.text_input("اسم شركتك (الذي سيظهر في لوحة التحكم)")
-    code_input = st.text_input("كود الاشتراك الشهري", type="password")
+    code_input = st.text_input("كلمة المرور أو كود الاشتراك", type="password")
     submit_button = st.form_submit_button("دخول المنصة")
 
     if submit_button:
-      # كلمة مرور الإدارة بالإنجليزية للأمان التام
-      ADMIN_PASSWORD = "Ahmed Khaled 1998"
+      clean_code = code_input.strip().lower()
+      admin_pass = "ahmed khaled 1998"
+      valid_codes = ["ninja-2026-vip", "toyou-2026-pro", "fleet-9988-2026"]
 
-      # أكواد الاشتراكات الشهرية الصالحة التي تقومي ببيعها للعملاء
-      valid_subscription_codes = [
-          "NINJA-2026-VIP",
-          "TOYOU-2026-PRO",
-          "FLEET-9988-2026",
-      ]
-
-      if code_input == ADMIN_PASSWORD:
+      if clean_code == admin_pass:
         st.session_state.logged_in = True
         st.session_state.company_name = (
             company_input if company_input else "لوحة الإدارة الرئيسية (الأدمن)"
         )
         st.success("مرحباً بكِ يا بشمهندسة بسملة! يتم فتح المنصة...")
         st.rerun()
-      elif code_input in valid_subscription_codes:
+      elif clean_code in valid_codes:
         if company_input.strip() == "":
           st.error("الرجاء كتابة اسم شركتك بشكل صحيح.")
         else:
@@ -86,11 +90,11 @@ if not st.session_state.logged_in:
           st.success(f"مرحباً بكِ في لوحة تحكم شركة {company_input}!")
           st.rerun()
       else:
-        st.error("كود الاشتراك الشهري غير صحيح أو منتهي الصلاحية.")
+        st.error("كلمة المرور غير صحيحة. تأكد من البيانات.")
 
   st.stop()
 
-# لو تم تسجيل الدخول بنجاح
+# --- لوحة التحكم الجانبية ---
 st.sidebar.title("⚙️ الإعدادات والتحكم")
 
 if st.sidebar.button("🚪 تسجيل الخروج"):
@@ -137,20 +141,21 @@ if uploaded_files:
 else:
   data = {
       "اسم السائق": ["قم برفع ملفات الأسطول الخاصة بك"],
-      "رقم الإقامة": ["---"],
-      "رقم المركبة": ["---"],
-      "حالة الإقامة": ["---"],
+      "رقم الإقامة": ["100200300"],
+      "رقم المركبة": ["ABC-1234"],
+      "حالة الإقامة": ["سارية"],
       "تاريخ انتهاء الإقامة": ["2026-12-31"],
-      "رخصة سارية؟": ["---"],
-      "الطلبات المقبولة": [0],
-      "الطلبات المرفوضة": [0],
-      "محفظة الكاش (ج.م)": [0.0],
-      "منصة التوصيل": ["---"],
+      "رخصة سارية؟": ["نعم"],
+      "الطلبات المقبولة": [15],
+      "الطلبات المرفوضة": [2],
+      "محفظة الكاش (ج.م)": [1250.50],
+      "منصة التوصيل": ["مثال_الشركة"],
   }
   df = pd.DataFrame(data)
-  st.sidebar.info("💡 برجاء رفع ملفات الإكسل الخاصة بالأسطول لعرض البيانات وتحليلها.")
+  st.sidebar.info("💡 برجاء رفع ملفات الإكسل الخاصة بالأسطول لعرض البيانات.")
 
 if df is not None:
+  # حساب أيام الإقامة
   if "تاريخ انتهاء الإقامة" in df.columns:
     df["تاريخ انتهاء الإقامة ديت"] = pd.to_datetime(
         df["تاريخ انتهاء الإقامة"], errors="coerce"
@@ -171,6 +176,50 @@ if df is not None:
     df[t["days_remaining"]] = df["تاريخ انتهاء الإقامة ديت"].apply(calc_days)
     df = df.drop(columns=["تاريخ انتهاء الإقامة ديت"])
 
+  # --- خيارات البحث والفلترة المتقدمة ---
+  st.markdown("---")
+  col_s1, col_s2 = st.columns(2)
+
+  with col_s1:
+    search_query = st.text_input(t["search_label"], "")
+
+  with col_s2:
+    filter_status = st.selectbox(
+        t["filter_label"],
+        [
+            t["all_residences"],
+            t["valid_residences"],
+            t["expired_residences"],
+        ],
+    )
+
+  # تطبيق البحث بالاسم أو رقم الإقامة
+  if search_query:
+    q = search_query.lower()
+    name_col = (
+        "اسم السائق" if "اسم السائق" in df.columns else df.columns[0]
+    )
+    res_col = "رقم الإقامة" if "رقم الإقامة" in df.columns else None
+
+    if res_col and res_col in df.columns:
+      df = df[
+          df[name_col].astype(str).str.lower().str.contains(q)
+          | df[res_col].astype(str).str.lower().str.contains(q)
+      ]
+    else:
+      df = df[df[name_col].astype(str).str.lower().str.contains(q)]
+
+  # تطبيق فلترة الإقامات (السارية vs المنتهية)
+  if filter_status == t["valid_residences"] and t["days_remaining"] in df.columns:
+    df = df[df[t["days_remaining"]].str.contains("متبقي", na=False)]
+  elif (
+      filter_status == t["expired_residences"] and t["days_remaining"] in df.columns
+  ):
+    df = df[
+        df[t["days_remaining"]].str.contains("منتهية|تنتهي", na=False)
+    ]
+
+  # --- الإحصائيات العلوية (المحفظة والطلبات) ---
   col1, col2, col3, col4 = st.columns(4)
   total_drivers = len(df)
   active_orders_sum = (
@@ -189,7 +238,6 @@ if df is not None:
   col4.metric(t["total_cash"], f"{total_cash_sum:,.2f}")
 
   st.markdown("---")
-
   st.subheader(t["fleet_status"])
   st.dataframe(df, use_container_width=True)
 
